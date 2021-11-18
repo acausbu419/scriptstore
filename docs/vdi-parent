@@ -1,0 +1,48 @@
+Powershell Modules
+-SnipeitPS
+-ImportExcel
+
+Default Apps:
+-Adobe Reader DC # 
+-App Volumes Agent
+-AutoIt
+-Citrix Receiver 4.9 LTSR
+--Switches: /AutoUpdateCheck=disabled /ALLOWADDSTORE=N
+-Chrome
+-iTivity
+-Office
+-Silverlight
+-PaperStream IP x86
+-Printer Installer Client
+-Rainmeter
+-SRFax
+-DEM
+-Horizon Agent
+
+Customizations:
+-Turn off recycle bin
+-NoActiveProbe
+--Key Path: SOFTWARE\Wow6432Node\Policies\Microsoft\Windows\NetworkConnectivityStatusIndicator
+--Value name: NoActiveProbe
+--Value data: 00000000
+
+-Remove Recycle Bin shortcut
+--User Configuration/ADMX/Desktop - Remove Recycle Bin icon from Desktop
+
+-AutoPilotConfig:
+-C:\ProgramData\AutoPilotConfig
+-Root
+--Icons
+--Start Menu
+-Shortcuts
+
+-RSAT
+--Server Manager
+--GPMT
+--DNS
+--DHCP
+--ADLDS
+
+H7jGr6JSnduoS2!
+
+lspci -v | grep -A1 -i ethernet

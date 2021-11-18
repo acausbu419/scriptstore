@@ -1,0 +1,1 @@
+﻿Get-WmiObject -Class Win32_UserProfile | Where-Object {(!$_.special) -and ($_.converttodatetime($_.lastusetime) -lt (get-date).AddDays(-15))} | Remove-WmiObject
