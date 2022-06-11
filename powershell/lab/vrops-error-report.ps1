@@ -26,4 +26,4 @@ foreach($r in $report){
 }
 
 
-#$users = Get-ADUser -Identity caleb.simmons -Properties *
+#$users = Get-ADUser -Identity # -Properties *

@@ -4,6 +4,7 @@
 #This script is used as a sort of testing area for PRTG
 #using the PrtgAPI module.
 
+#####
 
 #lab space for remote dc connect
 #delet dis
@@ -14,10 +15,12 @@
 #lab space for netmon connect
 #replace with api or hash
 $netmonuser = "netmon"
-$netmonpasswd = ConvertTo-SecureString "KHpJPpiHTXqyC7DhRbRf5BRFhiHauZzg" -AsPlainText -Force
+$netmonpasswd = ConvertTo-SecureString "" -AsPlainText -Force
 
 $netmoncreds = New-Object System.Management.Automation.PSCredential ($netmonuser, $netmonpasswd)
 #end temp area
+
+#####
 
 #modules
 Import-Module ActiveDirectory   #Installed with RSAT ADLDS Optional Feature
