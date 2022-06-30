@@ -2,7 +2,7 @@
 #md -Name $_ $(1..254 | % {"{0:000}" -f $_ } )
 
 #Declare base path for reports
-$path = "E:\additional\clinicdailyreports\"
+$path = <#Path#>
 #Grab all files under each site's folder
 $files = Get-ChildItem -Path $path -Recurse -Include *.* | Select-Object name,fullname,creationtime
 
