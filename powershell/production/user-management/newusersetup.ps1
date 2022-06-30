@@ -14,7 +14,19 @@ $resultList = @(
 )
 #endregion
 
-#region Prereqs#Modules required script to function#Check for ImportExcel module and install if not foundif (Get-Module -ListAvailable -Name ImportExcel) {    Set-ExecutionPolicy Bypass -Force    Import-Module ImportExcel} else {    Set-PackageSource -Name MyNuget -NewName NewNuGet -Trusted -ProviderName NuGet -Force -ErrorAction SilentlyContinue    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue    Install-Module ImportExcel    Import-Module ImportExcel}
+#region Prereqs
+#Modules required script to function
+#Check for ImportExcel module and install if not found
+if (Get-Module -ListAvailable -Name ImportExcel) {
+    Set-ExecutionPolicy Bypass -Force
+    Import-Module ImportExcel
+} 
+else {
+    Set-PackageSource -Name MyNuget -NewName NewNuGet -Trusted -ProviderName NuGet -Force -ErrorAction SilentlyContinue
+    Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+    Install-Module ImportExcel
+    Import-Module ImportExcel
+}
 
 Import-Module ActiveDirectory
 
@@ -24,11 +36,11 @@ Clear-Content -Path "C:\scripts\results.txt"
 #Import newemp.xlsx submission and current locations.xlsx files
 $users =  Import-Excel "C:\scripts\newemp.xlsx" -ErrorAction SilentlyContinue -EndColumn 10
 #Strip out entries with empty EMPLOYID field to clear out junk entries
-$users = $users | where {$_.EMPLOYID -match "[A-Za-z]"}
+$users = $users | Where-Object {$_.EMPLOYID -match "[A-Za-z]"}
 
-$locations = Import-Excel '\\ds-dc01\c$\scripts\locations.xlsx' -ErrorAction SilentlyContinue
+$locations = Import-Excel '\\SERVERNAME\c$\scripts\locations.xlsx' -ErrorAction SilentlyContinue
 #Strip out entries with empty NAME field to clear out junk entries
-$locations = $locations | where {$_.NAME -match "[A-Za-z]"}
+$locations = $locations | Where-Object {$_.NAME -match "[A-Za-z]"}
 #endregion
 
 foreach($user in $users){
@@ -62,8 +74,8 @@ foreach($user in $users){
             #Process as BA if there is no numeric pattern.
             elseif($user.EMPLOYID -notmatch '\d\d\d'){
                 $baemployeeid = $user.EMPLOYID + (Get-Date -Format yyyy)
-                $upn = "@arcare.net"
-                    $OU = "OU=BA,OU=User Accounts,DC=arcare,DC=net"
+                $upn = "@COMPANYNAME.NET"
+                    $OU = <#OU Path#>
                     $state = "AR"
                     $splat = @{ 
                         SamAccountName = ($user.firstname + "." + $user.lastname) 
@@ -78,7 +90,7 @@ foreach($user in $users){
                         Path = $OU 
                         DisplayName = ($user.firstname + " " + $user.lastname) 
                         OtherAttributes = @{'company' = $company;'extensionattribute12' = "$ext12";} 
-                        AccountPassword = ConvertTo-SecureString "Arcare1234" -AsPlainText -Force
+                        AccountPassword = ConvertTo-SecureString "COMPANYNAME1234" -AsPlainText -Force
                         ChangePasswordAtLogon = $true
                     }
                 
@@ -105,35 +117,35 @@ foreach($user in $users){
                 #Process as rehire if EID, BDAY, NAME match
                 if(Get-ADUser -Filter {(extensionattribute11 -eq $ext11) -and (samaccountname -eq $username) -and (employeeid -eq $employeeid)}){
                     #Continue if additional match is found
-                    if($user.COMPANY -eq "ARcare"){
-                        $upn = "@arcare.net"
-                        $OU = "OU=AR,OU=User Accounts,DC=arcare,DC=net"
+                    if($user.COMPANY -eq "COMPANYNAME"){
+                        $upn = "@COMPANYNAME.NET"
+                        $OU = <#OU Path#>
                         $state = "AR"
                         $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                    elseif($user.COMPANY -eq "KentuckyCare"){
-                        $company = "KentuckyCare"
-                        $upn = "@kentuckycare.net"
-                        $OU = "OU=KY,OU=User Accounts,DC=arcare,DC=net"
+                    elseif($user.COMPANY -eq "COMPANYNAME"){
+                        $company = "COMPANYNAME"
+                        $upn = "@COMPANYNAME.NET"
+                        $OU = <#OU Path#>
                         $state = "KY"
                         $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                    elseif($user.COMPANY -eq "MississippiCare"){
-                        $upn = "@mississippicare.net"
-                        $OU = "OU=MS,OU=User Accounts,DC=arcare,DC=net"
+                    elseif($user.COMPANY -eq "COMPANYNAME"){
+                        $upn = "@COMPANYNAME.NET"
+                        $OU = <#OU Path#>
                         $state = "MS"
                         $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                    elseif($user.COMPANY -eq "Pruitt Insurance"){
-                        $upn = "@arcare.net"
-                        $OU = "OU=Pruitt,OU=User Accounts,DC=arcare,DC=net"
+                    elseif($user.COMPANY -eq "COMPANYNAME"){
+                        $upn = "@COMPANYNAME.NET"
+                        $OU = "OU=Pruitt,OU=User Accounts,DC=COMPANYNAME,DC=net"
                         $state = "MS"
                         $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                    elseif($user.COMPANY -eq "Primary Health"){
-                        $upn = "@arcare.net"
-                        $OU = "OU=AR,OU=User Accounts,DC=arcare,DC=net"
+                    elseif($user.COMPANY -eq "COMPANYNAME"){
+                        $upn = "@COMPANYNAME.NET"
+                        $OU = <#OU Path#>
                         $state = "AR"
                         $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                    elseif($user.COMPANY -eq "ICSRX"){
-                        $upn = "@arcare.net"
-                        $OU = "OU=ICSRX,OU=User Accounts,DC=arcare,DC=net"
+                    elseif($user.COMPANY -eq "COMPANYNAME"){
+                        $upn = "@COMPANYNAME.NET"
+                        $OU = <#OU Path#>
                         $state = "AR"
                         $mail = ($user.firstname + "." + $user.lastname + $upn)}
                                         
@@ -172,35 +184,35 @@ foreach($user in $users){
                 }
                 #If user does not match at all, create new user as an employee.
                 elseif(!(Get-ADUser -Filter {(samaccountname -ne $username) -and (employeeid -ne $employeeid)})) {
-                        if($user.COMPANY -eq "ARcare"){
-                            $upn = "@arcare.net"
-                            $OU = "OU=AR,OU=User Accounts,DC=arcare,DC=net"
+                        if($user.COMPANY -eq "COMPANYNAME"){
+                            $upn = "@COMPANYNAME.NET"
+                            $OU = <#OU Path#>
                             $state = "AR"
                             $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                        elseif($user.COMPANY -eq "KentuckyCare"){
-                            $company = "KentuckyCare"
-                            $upn = "@kentuckycare.net"
-                            $OU = "OU=KY,OU=User Accounts,DC=arcare,DC=net"
+                        elseif($user.COMPANY -eq "COMPANYNAME"){
+                            $company = "COMPANYNAME"
+                            $upn = "@COMPANYNAME.NET"
+                            $OU = <#OU Path#>
                             $state = "KY"
                             $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                        elseif($user.COMPANY -eq "MississippiCare"){
-                            $upn = "@mississippicare.net"
-                            $OU = "OU=MS,OU=User Accounts,DC=arcare,DC=net"
+                        elseif($user.COMPANY -eq "COMPANYNAME"){
+                            $upn = "@COMPANYNAME.NET"
+                            $OU = <#OU Path#>
                             $state = "MS"
                             $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                        elseif($user.COMPANY -eq "Pruitt Insurance"){
-                            $upn = "@arcare.net"
-                            $OU = "OU=Pruitt,OU=User Accounts,DC=arcare,DC=net"
+                        elseif($user.COMPANY -eq "COMPANYNAME"){
+                            $upn = "@COMPANYNAME.NET"
+                            $OU = "OU=Pruitt,OU=User Accounts,DC=COMPANYNAME,DC=net"
                             $state = "MS"
                             $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                        elseif($user.COMPANY -eq "Primary Health"){
-                            $upn = "@arcare.net"
-                            $OU = "OU=AR,OU=User Accounts,DC=arcare,DC=net"
+                        elseif($user.COMPANY -eq "COMPANYNAME"){
+                            $upn = "@COMPANYNAME.NET"
+                            $OU = <#OU Path#>
                             $state = "MS"
                             $mail = ($user.firstname + "." + $user.lastname + $upn)}
-                        elseif($user.COMPANY -eq "ICSRX"){
-                            $upn = "@arcare.net"
-                            $OU = "OU=ICSRX,OU=User Accounts,DC=arcare,DC=net"
+                        elseif($user.COMPANY -eq "COMPANYNAME"){
+                            $upn = "@COMPANYNAME.NET"
+                            $OU = <#OU Path#>
                             $state = "AR"
                             $mail = ($user.firstname + "." + $user.lastname + $upn)}
 
@@ -218,7 +230,7 @@ foreach($user in $users){
                                 Path = $OU
                                 DisplayName = ($user.firstname + " " + $user.lastname)
                                 OtherAttributes = @{'mail' = "$mail";'company' = "$company";'extensionattribute11' = "$ext11";'extensionattribute12' = "$ext12";'extensionattribute13' = "$ext13";} 
-                                AccountPassword = ConvertTo-SecureString "Arcare1234" -AsPlainText -Force
+                                AccountPassword = ConvertTo-SecureString "COMPANYNAME1234" -AsPlainText -Force
                                 ChangePasswordAtLogon = $true
                             }
 
@@ -246,6 +258,6 @@ $body += (get-Content -Path "C:\scripts\results.txt") -join "`n"
 if($body -ne "Active Directory Changes:`n"){
     $body += "Result Status List:`n`n"
     $body += $resultList -join "`n"
-    Send-MailMessage -From no_reply@arcare.net -To usermanagement@arcare.onmicrosoft.com -Subject "User Setup Results" -Body $body -SmtpServer ds-ca.arcare.net
+    Send-MailMessage -From no_reply@COMPANYNAME.NET -To usermanagement@COMPANYNAME.onmicrosoft.com -Subject "User Setup Results" -Body $body -SmtpServer ds-ca.COMPANYNAME.net
 }
 #endregion

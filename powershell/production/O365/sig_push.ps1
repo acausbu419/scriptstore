@@ -14,8 +14,8 @@ Connect-ExchangeOnline
 #$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $Cred -Authentication Basic -AllowRedirection
 #Import-PSSession $Session -DisableNameChecking -AllowClobber
 
-$save_location = 'C:\signatures\ar\'
-$email_domain = '@arcare.net'
+$save_location = <#Path#>
+$email_domain = '@COMPANYNAME.net'
 
 $sig_files = Get-ChildItem -Path $save_location
 
@@ -28,8 +28,8 @@ foreach ($item in $sig_files) {
     set-mailboxmessageconfiguration -identity $user_name -signaturehtml (Get-Content $filename) -autoaddsignature $true
 }
 
-$save_location = 'C:\signatures\ky\'
-$email_domain = '@kentuckycare.net'
+$save_location = <#Path#>
+$email_domain = '@COMPANYNAME.net'
 
 $sig_files = Get-ChildItem -Path $save_location
 
@@ -42,8 +42,8 @@ foreach ($item in $sig_files) {
     set-mailboxmessageconfiguration -identity $user_name -signaturehtml (Get-Content $filename) -autoaddsignature $true
 }
 
-$save_location = 'C:\signatures\ms\'
-$email_domain = '@mississippicare.net'
+$save_location = <#Path#>
+$email_domain = '@COMPANYNAME.net'
 
 $sig_files = Get-ChildItem -Path $save_location
 

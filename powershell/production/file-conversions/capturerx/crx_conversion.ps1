@@ -3,7 +3,6 @@
 
 #This script converts a spreadsheet (using the ImportExcel module)
 #into a flatfile for CaptureRX.
-#Production files are stored on fs-pd\additional\capturerx
 
 #Install-Module ImportExcel
 

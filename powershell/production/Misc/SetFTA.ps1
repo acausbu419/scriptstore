@@ -16,6 +16,3 @@ if (-not(Test-Path -Path $Path\CLSID))
 $var = & c:\pushit\programs\setuserfta.exe get
 
 if(($var -notlike "*.pdf, AcroExch.Document.DC*") -or ($var -notlike "*.htm, ChromeHTML*")){Start-Process c:\pushit\programs\setuserfta.exe -ArgumentList c:\pushit\files\SetUserFTAConfig.txt }
-
-#Assign PL Client Values
-#msiexec /i C:\deploy\programs\PrinterInstallerClient.msi /qn HOMEURL=https://arcare.printercloud.com AUTHORIZATION_CODE=qz57mh8d

@@ -7,8 +7,8 @@ $displayname = $first_last[0] + " " + $first_last[1]
 
 $user = Get-ADUser $old_username -Properties Company,Mail,proxyAddresses,displayname
 
-if(($user.Company -ne "KentuckyCare") -and ($user.company -ne "MississippiCare")){
-$user.Company = "arcare"
+if(($user.Company -ne "COMPANYNAME") -and ($user.company -ne "COMPANYNAME")){
+$user.Company = "COMPANYNAME"
 }
 
 $newupn = $first_last[0] + "." + $first_last[1] + "@" + $user.company + ".net"

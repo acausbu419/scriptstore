@@ -1,4 +1,4 @@
-﻿$users = Get-ADUser -Filter {enabled -eq $true} -Server kydc1.kentuckycare.net -SearchBase "OU=End Users,OU=User Accounts,dc=kentuckycare,dc=net" -Properties *
+﻿$users = Get-ADUser -Filter {enabled -eq $true} -Server <#Server FQDN#> <#SearchBase#> -Properties *
 
 $Cred = Get-Credential
 
@@ -13,7 +13,7 @@ Get-PSSession | Remove-PSSession
 
 #local vars
 
-Get-ADUser -Filter {enabled -eq $true} -Server kydc1.kentuckycare.net -SearchBase "OU=End Users,OU=User Accounts,dc=kentuckycare,dc=net" -Properties * | select userprincipalname,displayname,employeeID,extensionattribute11,extensionattribute12,title,department,streetAddress,city,st,postalcode,telephonenumber,facsimiletelephonenumber | Export-Csv -Path u:\kymigration.csv
+Get-ADUser -Filter {enabled -eq $true} -Server <#Server FQDN#> <#SearchBase#> -Properties * | select-object userprincipalname,displayname,employeeID,extensionattribute11,extensionattribute12,title,department,streetAddress,city,st,postalcode,telephonenumber,facsimiletelephonenumber | Export-Csv -Path u:\kymigration.csv
 
 $users = Import-Csv -Path U:\kymigration.csv
 

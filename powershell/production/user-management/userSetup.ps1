@@ -5,7 +5,7 @@ Clear-Content -Path C:\scripts\results.txt
 #region usercleanup
 
 #remove group membership from disabled accounts
-get-aduser -filter {enabled -eq $false} -searchbase "OU=ZZ - Disabled,OU=User Accounts,DC=ARCARE,DC=NET" -Properties memberof | 
+get-aduser -filter {enabled -eq $false} -searchbase "OU=ZZ - Disabled,OU=User Accounts,DC=COMPANYNAME,DC=NET" -Properties memberof | 
     ForEach-Object {
         $user = $_
         $_.memberof | ForEach-Object{remove-adgroupmember $_ -members $user -Confirm:$false}
@@ -19,7 +19,7 @@ $startdate = (Get-Date).AddDays(1) | Get-Date -Format "M/d/yyyy"
 $users = Get-ADUser -Filter {Enabled -eq $false -and extensionattribute12 -eq $startdate} -Properties samaccountname,extensionattribute12,userprincipalname
 
 foreach($user in $users){
-    #On ds-dc01, scheduled task userSetup runs every 15 minutes (this script)
+    #On SERVERNAME, scheduled task userSetup runs every 15 minutes (this script)
     #On Sundays at midnight, this section becomes relevant.
     
     #Flag all the users to have their password changed at next login.
@@ -27,7 +27,7 @@ foreach($user in $users){
     #Isolate only firstname.lastname from the userprincipalname.
     $username = $user.userprincipalname.split("@")
     #Set U drive for new hires being enabled.
-    Set-ADUser -Identity $username[0] -HomeDirectory \\fs-userprofile\users\$($username[0]) -HomeDrive U:
+    Set-ADUser -Identity $username[0] -HomeDirectory \\SERVERNAME\users\$($username[0]) -HomeDrive U:
 
     #Check to see if the users' start date is equal to the date 24 hours from the script being run.
     #So if user start date is 9/14/2020 and this script runs at midnight on 9/13/2020, it will find a match and enabled the accounts.
@@ -49,7 +49,7 @@ Function Test-ADAuthentication {
 }
 
 #Test-ADAuthentication "$($user.samaccountname)" "Password1"
-if((Test-ADAuthentication "$($user.samaccountname)" "Arcare1234") -eq $true){
+if((Test-ADAuthentication "$($user.samaccountname)" "COMPANYNAME1234") -eq $true){
     Set-ADUser -Identity $user.SamAccountName -ChangePasswordAtLogon $true
     #write-host $user.UserPrincipalName
 }}
@@ -70,13 +70,13 @@ foreach($l in $locations){
 #GP verification
 #Scheduled task runs on db-sqlprod every day to provide the csv
 #Remove all the junk spaces out of the database export from GP
-(Get-Content '\\db-sqlprod\c$\temp\SQLCMD.csv' | foreach {$_ -replace ' '}) | out-file '\\db-sqlprod\c$\temp\SQLCMD.csv'
+(Get-Content '\\SERVERNAME\c$\temp\SQLCMD.csv' | foreach {$_ -replace ' '}) | out-file '\\SERVERNAME\c$\temp\SQLCMD.csv'
 
 #Remove junk line after header
-$import = Import-Csv -Path '\\db-sqlprod\c$\temp\SQLCMD.csv' | select -Skip 1
+$import = Import-Csv -Path '\\SERVERNAME\c$\temp\SQLCMD.csv' | select -Skip 1
 
-#Grab all arcare users with an employee id field set
-$users = Get-ADUser -Filter {(extensionattribute10 -like "*") -and (enabled -eq $true)} -SearchBase "OU=AR,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,enabled,extensionattribute10,whenChanged
+#Grab all COMPANYNAME users with an employee id field set
+$users = Get-ADUser -Filter {(extensionattribute10 -like "*") -and (enabled -eq $true)} -SearchBase "OU=AR,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,enabled,extensionattribute10,whenChanged
 
 #
 foreach($i in $import){
@@ -89,7 +89,7 @@ foreach($i in $import){
     }
 }
 
-$users = Get-ADUser -Filter {(extensionattribute10 -like "*") -and (enabled -eq $true)} -SearchBase "OU=KY,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,enabled,extensionattribute10,whenChanged
+$users = Get-ADUser -Filter {(extensionattribute10 -like "*") -and (enabled -eq $true)} -SearchBase "OU=KY,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,enabled,extensionattribute10,whenChanged
 
 foreach($i in $import){
     foreach($user in $users){
@@ -101,7 +101,7 @@ foreach($i in $import){
     }
 }
 
-$users = Get-ADUser -Filter {(extensionattribute10 -like "*") -and (enabled -eq $true)} -SearchBase "OU=MS,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,enabled,extensionattribute10,whenChanged
+$users = Get-ADUser -Filter {(extensionattribute10 -like "*") -and (enabled -eq $true)} -SearchBase "OU=MS,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,enabled,extensionattribute10,whenChanged
 
 foreach($i in $import){
     foreach($user in $users){
@@ -116,7 +116,7 @@ foreach($i in $import){
 #$users = $import | ForEach-Object { Get-ADUser -Filter {extensionattribute10 -like "*$($_.EMPLOYID)*"} -Properties samaccountname,extensionattribute10 } | select samaccountname,extensionattribute10
 
 #expire users under the following criteria $users.count write-host $users.name $users.company
-$users = Get-ADUser -Filter {(Enabled -eq $true)} -Properties lastlogondate,whencreated,passwordlastset,company,passwordexpired,accountexpirationdate,extensionattribute12  -SearchBase "OU=User Accounts,DC=arcare,DC=net" | 
+$users = Get-ADUser -Filter {(Enabled -eq $true)} -Properties lastlogondate,whencreated,passwordlastset,company,passwordexpired,accountexpirationdate,extensionattribute12  -SearchBase "OU=User Accounts,DC=COMPANYNAME,DC=net" | 
     Where-object {($_.name -ne "AR$") `
         -and ($_.extensionattribute12 -le (get-date).AddDays(-60).Date) `
         -and ($_.lastlogondate -le (get-date).AddDays(-180)) `
@@ -134,10 +134,10 @@ foreach($user in $users){
 
 
 #move disabled users
-$users = Get-ADUser -Filter {(Enabled -eq $false)} -SearchBase "OU=User Accounts,DC=arcare,DC=net" -Properties enabled,distinguishedname,lastlogondate,whencreated,memberof | where{($_.distinguishedname -NotLike "*OU=ZZ - Disabled,*") -and ($_.lastlogondate -le (get-date).AddDays(-45).Date) -and ($_.whencreated -le (get-date).AddDays(-45).Date)}
+$users = Get-ADUser -Filter {(Enabled -eq $false)} -SearchBase "OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties enabled,distinguishedname,lastlogondate,whencreated,memberof | where{($_.distinguishedname -NotLike "*OU=ZZ - Disabled,*") -and ($_.lastlogondate -le (get-date).AddDays(-45).Date) -and ($_.whencreated -le (get-date).AddDays(-45).Date)}
 
 foreach($user in $users){
-    Move-ADObject -Identity $user.DistinguishedName -TargetPath "OU=ZZ - Disabled,OU=User Accounts,DC=arcare,DC=net"
+    Move-ADObject -Identity $user.DistinguishedName -TargetPath "OU=ZZ - Disabled,OU=User Accounts,DC=COMPANYNAME,DC=net"
     Add-Content -Path  C:\scripts\results.txt "Moved disabled user account $($user.SamAccountName) to ZZ - Disabled OU."}
 
 #Pharmacy Student Expirations
@@ -154,7 +154,7 @@ foreach($user in $users){
 }
 
 #strip group membership of disabled users in zz - disabled
-Get-ADUser -Filter {(Enabled -eq $false)} -SearchBase "OU=ZZ - Disabled,OU=User Accounts,DC=arcare,DC=net" -Properties enabled,distinguishedname,lastlogondate,whencreated,memberof | ForEach-Object {$_.MemberOf | Remove-ADGroupMember -Members $_.DistinguishedName -Confirm:$false}
+Get-ADUser -Filter {(Enabled -eq $false)} -SearchBase "OU=ZZ - Disabled,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties enabled,distinguishedname,lastlogondate,whencreated,memberof | ForEach-Object {$_.MemberOf | Remove-ADGroupMember -Members $_.DistinguishedName -Confirm:$false}
 
 #endregion usercleanup
 
@@ -165,37 +165,37 @@ Get-ADUser -Filter {(Enabled -eq $false)} -SearchBase "OU=ZZ - Disabled,OU=User 
 #Grab all users in the AR / KY / MS Organizational Units that are NOT members of the vdi-enabled group and add them to the group if the account is not disabled.
 $securitygroup = (Get-ADGroup 'vdi-enabled')
 
-$users = Get-ADUser -Filter * -SearchBase "OU=AR,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=AR,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=KY,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=KY,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=MS,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=MS,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=ICSRX,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=ICSRX,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=Pruitt,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=Pruitt,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter {(memberOf -ne $securitygroup.DistinguishedName) -and (enabled -eq $true) -and (objectclass -eq "user")} -SearchBase "OU=BA,OU=User Accounts,DC=arcare,DC=net"
+$users = Get-ADUser -Filter {(memberOf -ne $securitygroup.DistinguishedName) -and (enabled -eq $true) -and (objectclass -eq "user")} -SearchBase "OU=BA,OU=User Accounts,DC=COMPANYNAME,DC=net"
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
@@ -205,37 +205,37 @@ foreach($user in $users){
 
 $securitygroup = (Get-ADGroup 'sso_kronos')
 
-$users = Get-ADUser -Filter * -SearchBase "OU=AR,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=AR,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=KY,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=KY,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=MS,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=MS,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=ICSRX,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=ICSRX,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter * -SearchBase "OU=Pruitt,OU=User Accounts,DC=arcare,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
+$users = Get-ADUser -Filter * -SearchBase "OU=Pruitt,OU=User Accounts,DC=COMPANYNAME,DC=net" -Properties samaccountname,memberof | Where-Object {-not ($_.memberof -match $securitygroup.Name)}
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
     Add-Content -Path  C:\scripts\results.txt "Added user $($user.SamAccountName) to group $($securitygroup.Name)."}
 
-$users = Get-ADUser -Filter {(memberOf -ne $securitygroup.DistinguishedName) -and (enabled -eq $true) -and (objectclass -eq "user")} -SearchBase "OU=BA,OU=User Accounts,DC=arcare,DC=net"
+$users = Get-ADUser -Filter {(memberOf -ne $securitygroup.DistinguishedName) -and (enabled -eq $true) -and (objectclass -eq "user")} -SearchBase "OU=BA,OU=User Accounts,DC=COMPANYNAME,DC=net"
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName
@@ -246,7 +246,7 @@ foreach($user in $users){
 
 #careware
 $securitygroup = (Get-ADGroup 'appvol-careware')
-$users = Get-ADUser -Filter {(department -eq "Special Services") -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=User Accounts,DC=arcare,DC=net"
+$users = Get-ADUser -Filter {(department -eq "Special Services") -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=User Accounts,DC=COMPANYNAME,DC=net"
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.samaccountname 
@@ -254,7 +254,7 @@ foreach($user in $users){
 
 #mitel connect
 $securitygroup = (Get-ADGroup 'appvol-mitel')
-$users = Get-ADUser -Filter {((department -eq "Professional Services") -or (department -eq "IT")  -or (department -eq "KMS")) -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=User Accounts,DC=arcare,DC=net"
+$users = Get-ADUser -Filter {((department -eq "Professional Services") -or (department -eq "IT")  -or (department -eq "KMS")) -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=User Accounts,DC=COMPANYNAME,DC=net"
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.samaccountname 
@@ -262,7 +262,7 @@ foreach($user in $users){
 
 #successehs
 $securitygroup = (Get-ADGroup 'appvol-ehs')
-$users = Get-ADUser -Filter {((department -eq "Professional Services")) -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=AR,OU=User Accounts,DC=arcare,DC=net"
+$users = Get-ADUser -Filter {((department -eq "Professional Services")) -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=AR,OU=User Accounts,DC=COMPANYNAME,DC=net"
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.samaccountname 
@@ -270,7 +270,7 @@ foreach($user in $users){
 
 #snagit
 $securitygroup = (Get-ADGroup 'appvol-snagit')
-$users = Get-ADUser -Filter {((department -eq "Professional Services") -or (department -eq "KMS")) -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=AR,OU=User Accounts,DC=arcare,DC=net"
+$users = Get-ADUser -Filter {((department -eq "Professional Services") -or (department -eq "KMS")) -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=AR,OU=User Accounts,DC=COMPANYNAME,DC=net"
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName 
@@ -278,7 +278,7 @@ foreach($user in $users){
 
 #add front office to usb passthrough group for scanning on zero clients
 $securitygroup = (Get-ADGroup 'vdi-uem-usbpassthrough')
-$users = Get-ADUser -Filter {(department -eq "Front Office") -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=User Accounts,DC=arcare,DC=net"
+$users = Get-ADUser -Filter {(department -eq "Front Office") -and (memberOf -ne $securitygroup.DistinguishedName)} -SearchBase "OU=User Accounts,DC=COMPANYNAME,DC=net"
 
 foreach($user in $users){
     Add-ADGroupMember -Identity $securitygroup.DistinguishedName -Members $user.SamAccountName 
@@ -292,39 +292,39 @@ $users = Get-ADUser -Filter {(enabled -eq $true)} -Properties samaccountname,com
 #$users = Get-ADUser -Identity stephanie.hawkins -Properties samaccountname,company,telephoneNumber,mobile,facsimileTelephoneNumber,streetaddress,l,st,postalcode,extensionattribute2
 
 foreach($user in $users){
-    if((($user.Company -eq "ARcare") -and (($user.telephoneNumber -eq $null) -or ($user.facsimileTelephoneNumber -eq $null) -or ($user.StreetAddress -eq $null) -or ($user.l -eq $null) -or ($user.st -eq $null) -or ($user.postalcode -eq $null)))){
+    if((($user.Company -eq "COMPANYNAME") -and (($user.telephoneNumber -eq $null) -or ($user.facsimileTelephoneNumber -eq $null) -or ($user.StreetAddress -eq $null) -or ($user.l -eq $null) -or ($user.st -eq $null) -or ($user.postalcode -eq $null)))){
         if($user.extensionattribute2 -ne "arbasic"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="arbasic"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for basic mail signature."}}
-    elseif((($user.Company -eq "ARcare") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -eq $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
+    elseif((($user.Company -eq "COMPANYNAME") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -eq $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
         if($user.extensionattribute2 -ne "arstandard"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="arstandard"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for standard mail signature."}}
-    elseif((($user.Company -eq "ARcare") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -ne $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
+    elseif((($user.Company -eq "COMPANYNAME") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -ne $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
         if($user.extensionattribute2 -ne "arextended"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="arextended"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for extended mail signature."}}
-    elseif((($user.Company -eq "KentuckyCare") -and (($user.telephoneNumber -eq $null) -or ($user.facsimileTelephoneNumber -eq $null) -or ($user.StreetAddress -eq $null) -or ($user.l -eq $null) -or ($user.st -eq $null) -or ($user.postalcode -eq $null)))){
+    elseif((($user.Company -eq "COMPANYNAME") -and (($user.telephoneNumber -eq $null) -or ($user.facsimileTelephoneNumber -eq $null) -or ($user.StreetAddress -eq $null) -or ($user.l -eq $null) -or ($user.st -eq $null) -or ($user.postalcode -eq $null)))){
         if($user.extensionattribute2 -ne "kybasic"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="kybasic"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for basic mail signature."}}
-    elseif((($user.Company -eq "KentuckyCare") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -eq $null)  -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
+    elseif((($user.Company -eq "COMPANYNAME") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -eq $null)  -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
         if($user.extensionattribute2 -ne "kystandard"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="kystandard"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for standard mail signature."}}
-    elseif((($user.Company -eq "KentuckyCare") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -ne $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
+    elseif((($user.Company -eq "COMPANYNAME") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -ne $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
         if($user.extensionattribute2 -ne "kyextended"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="kyextended"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for extended mail signature."}}
-    elseif((($user.Company -eq "MississippiCare") -and (($user.telephoneNumber -eq $null) -or ($user.facsimileTelephoneNumber -eq $null) -or ($user.StreetAddress -eq $null) -or ($user.l -eq $null) -or ($user.st -eq $null) -or ($user.postalcode -eq $null)))){
+    elseif((($user.Company -eq "COMPANYNAME") -and (($user.telephoneNumber -eq $null) -or ($user.facsimileTelephoneNumber -eq $null) -or ($user.StreetAddress -eq $null) -or ($user.l -eq $null) -or ($user.st -eq $null) -or ($user.postalcode -eq $null)))){
         if($user.extensionattribute2 -ne "msbasic"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="msbasic"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for basic mail signature."}}
-    elseif((($user.Company -eq "MississippiCare") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -eq $null)  -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
+    elseif((($user.Company -eq "COMPANYNAME") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -eq $null)  -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
         if($user.extensionattribute2 -ne "msstandard"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="msstandard"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for standard mail signature."}}
-    elseif((($user.Company -eq "MississippiCare") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -ne $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
+    elseif((($user.Company -eq "COMPANYNAME") -and ($user.telephoneNumber -ne $null) -and ($user.mobile -ne $null) -and ($user.facsimileTelephoneNumber -ne $null) -and ($user.StreetAddress -ne $null) -and ($user.l -ne $null) -and ($user.st -ne $null) -and ($user.postalcode -ne $null))){
         if($user.extensionattribute2 -ne "msextended"){
             Set-ADUser $user.SamAccountName -Replace @{'extensionattribute2'="msextended"}
             Add-Content -Path  C:\scripts\results.txt "Updated user $($user.SamAccountName) for extended mail signature."}}}
@@ -334,6 +334,6 @@ foreach($user in $users){
 $body = "Active Directory Changes:`n"
 $body += (get-Content -Path C:\scripts\results.txt) -join "`n"
 
-if($body -ne "Active Directory Changes:`n"){Send-MailMessage -From no_reply@arcare.net -To usermanagement@arcare.onmicrosoft.com -Subject "User Setup Results" -Body $body -SmtpServer ds-ca.arcare.net}
+if($body -ne "Active Directory Changes:`n"){Send-MailMessage -From no_reply@COMPANYNAME.net -To usermanagement@COMPANYNAME.onmicrosoft.com -Subject "User Setup Results" -Body $body -SmtpServer ds-ca.COMPANYNAME.net}
 else{}
 #endregion mailresults

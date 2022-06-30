@@ -1,9 +1,6 @@
-#$path = "$env:USERPROFILE\onedrive\desktop"
+$report = Import-Csv -Path <#Path To File#>
 
-#Get-Content -Path $path | Where-Object name -like "*.csv"
-$report = Import-Csv -Path 'C:\users\acaus\OneDrive\desktop\4-5-21 154552_000992 vrops-error-report vrops-vcs.csv'
-
-#Critial Reports
+#Critical Reports
 foreach($r in $report){
     #write-host $r.'Criticality Level' $r.Name $r.'Object Name'
     if($r.Name -like '*Hardware sensor health state degraded*'){
@@ -24,6 +21,3 @@ foreach($r in $report){
     
     $r.Name + " " + $r.'Object Name' + " " + $r.'Alert Type' + " " + $r.'Criticality Level' + " " + $r.'Start Time' + $r.Status
 }
-
-
-#$users = Get-ADUser -Identity # -Properties *

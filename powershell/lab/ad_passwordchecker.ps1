@@ -3,8 +3,8 @@
 foreach($user in $users){
 Function Test-ADAuthentication {
     param($user,$password)
-    (new-object directoryservices.directoryentry "",$user,$password).psbase.name -ne $null
+    $null -ne (new-object directoryservices.directoryentry "",$user,$password).psbase.name
 }
 
-Test-ADAuthentication "$($user.samaccountname)" "Password1"
+Test-ADAuthentication "$($user.samaccountname)" "<#Password To Test#>"
 }

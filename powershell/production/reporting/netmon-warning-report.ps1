@@ -4,17 +4,18 @@
 #This script is used to generate a weekly report of any PRTG sensor
 #in the warning state.
 
-$netmonuser = "netmon"
-$netmonpasswd = ConvertTo-SecureString "KHpJPpiHTXqyC7DhRbRf5BRFhiHauZzg" -AsPlainText -Force
-$netmoncreds = New-Object System.Management.Automation.PSCredential ($netmonuser, $netmonpasswd)
-#end temp area
+#####
+
+$netmon = Get-StoredCredential -Target netmon
+
+#####
 
 #modules
 Import-Module ActiveDirectory   #Installed with RSAT ADLDS Optional Feature
 Import-Module PrtgAPI           #Installed with Install-Module PrtgAPI
 
 #connect to netmon
-Connect-PrtgServer -Server netmon.arcare.net -Credential $netmoncreds #Comment out when doing script updates since it keeps the instance
+Connect-PrtgServer -Server netmon.COMPANYNAME.net -Credential $netmon #Comment out when doing script updates since it keeps the instance
 
 #get-device | Where-Object {($_.name -like "*switch*") -and ($_.name -like "*voice*")} | Set-ObjectProperty name "Voice Switch"
 #Get-Object | Where-Object {$_.name -eq "switch"} | set-object
@@ -48,7 +49,7 @@ foreach($pp in $p){
     #utilization - download
     #Eventlog
 
-    $pp.url = "https://netmon.arcare.net" + $pp.url
+    $pp.url = "https://netmon.COMPANYNAME.net" + $pp.url
     $pp.url = "'<a href=" + $pp.url + ">$($pp.Id)</a>'"
 
     if($pp.Name -like "Ping*"){
@@ -82,9 +83,8 @@ $emailbody = $p | Where-Object {$_.status -ne 'Up' -and $_.status -ne 'Paused (p
 $emailbody = $emailbody -replace '&gt;','>' -replace '&lt;','<' -replace '&#39;',""
 
 #email
-$users = Get-ADUser -Filter {(department -eq "IT") -and (enabled -eq $true)} -Properties name,mail -Server "ds-rodc01.arcare.net"
-#$users = Get-ADUser -Filter {(mail -eq "Adam.Ausburn@arcare.net") -and (enabled -eq $true)} -Properties name,mail -Server "ds-rodc01.arcare.net"
+$users = Get-ADUser -Filter {(department -eq "IT") -and (enabled -eq $true)} -Properties name,mail -Server <#Server FQDN#>
 
 foreach($u in $users){
-    Send-MailMessage -to $u.mail -Subject "Netmon Report - Action Items" -BodyAsHtml -body "$emailbody" -from no_reply@arcare.net -SmtpServer ds-ca.arcare.net
+    Send-MailMessage -to $u.mail -Subject "Netmon Report - Action Items" -BodyAsHtml -body "$emailbody" -from <#From Address#> -SmtpServer <#SMTP FQDN#>
     }

@@ -1,3 +1,5 @@
+20220629
+- purged identifying information
 20210916
 - docs(CHANGELOG) - created basic changelog
 - script(setregionalfolders) - updated regional folder script for new locations

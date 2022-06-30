@@ -6,19 +6,7 @@
 
 #####
 
-#lab space for remote dc connect
-#delet dis
-#$credstore = Get-Content $env:USERPROFILE\OneDrive\Desktop\creds.txt
-#$adpasswd = ConvertTo-SecureString $credstore[0] -AsPlainText -Force
-#$adcreds = New-Object System.Management.Automation.PSCredential ($credstore[2], $adpasswd)
-
-#lab space for netmon connect
-#replace with api or hash
-$netmonuser = "netmon"
-$netmonpasswd = ConvertTo-SecureString "" -AsPlainText -Force
-
-$netmoncreds = New-Object System.Management.Automation.PSCredential ($netmonuser, $netmonpasswd)
-#end temp area
+$netmon = Get-StoredCredential -Target netmon
 
 #####
 
@@ -27,7 +15,7 @@ Import-Module ActiveDirectory   #Installed with RSAT ADLDS Optional Feature
 Import-Module PrtgAPI           #Installed with Install-Module PrtgAPI
 
 #connect to netmon
-#Connect-PrtgServer -Server netmon.arcare.net -Credential $netmoncreds #Comment out when doing script updates since it keeps the instance
+Connect-PrtgServer -Server <#Server FQDN Here#> -Credential $netmon #Comment out when doing script updates since it keeps the instance
 
 #get-device | Where-Object {($_.name -like "*switch*") -and ($_.name -like "*voice*")} | Set-ObjectProperty name "Voice Switch"
 #Get-Object | Where-Object {$_.name -eq "switch"} | set-object

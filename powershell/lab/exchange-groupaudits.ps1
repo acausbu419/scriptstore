@@ -31,15 +31,3 @@ foreach($group in $groups){
         write-output $body
     }
 }
-
-
-
-
-
-
-#Distribution Groups
-#Get-DistributionGroup
-
-#Security Groups (main enabled only)?
-
-#Shared mailboxes
